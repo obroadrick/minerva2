@@ -5,7 +5,7 @@ Personal code for the Minerva 2.0 audit. I use this repo for general exploration
 Here is an example output of some of the intial computations this code can make:
 
 
-alpha=0.1
+alpha=0.1  
 p_1=0.6
 p_0=0.5
  
