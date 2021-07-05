@@ -2,9 +2,7 @@
 Personal code for the Minerva 2.0 audit. I use this repo for general exploration as well as test data generation for testing against the code in r2b2...
 
 ## Example
-Here is an example output of some of the intial computations this code can make:
-
-
+Here is a sample of some computations that this code can perform:  
 
 alpha=0.1  
 p_1=0.6  
@@ -36,4 +34,3 @@ kmin_3(BRAVO)=185
 kmin_3(Minerva 2.0)=181  
 sigma_3=3.571535082855545  
 omega_3=14.61491553622636  
- 
