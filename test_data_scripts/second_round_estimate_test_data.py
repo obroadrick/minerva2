@@ -1,3 +1,7 @@
+# Add access to the modules in this repo...
+import sys
+sys.path.append("..")
+
 from sigma import sigma
 from omega import omega
 from kmin_bravo import kmin_bravo
