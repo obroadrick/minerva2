@@ -1,6 +1,6 @@
 # Add access to the modules in this repo...
 import sys
-sys.path.append("..")
+sys.path.append("../..")
 
 from sigma import sigma
 from omega import omega
