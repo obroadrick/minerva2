@@ -5,43 +5,90 @@ from kmin_minerva2 import kmin_minerva2
 from round_size_bravo import round_size_bravo
 from round_size_minerva2 import round_size_minerva2
 import numpy as np
+from scipy.stats import binom
 
 # if each ballot has fixed cost, and rounds have no overhead, 
 # selection-ordered bravo is the most efficient method
 
 # what if we assume a cost per round?
 # there may be some balance between small rounds to achieve small
-# average sample number vs large rounds to achieve fewer 
-# average number of rounds
+# average sample number vs large rounds to achieve fewer average number of rounds
 
 ballotcost = 1
-roundcost = 10 #entering sample, getting decision, preparing next sample
+roundcost = 10 # mostly due to opening boxes (but also entering sample, getting decision, preparing next sample)
 
 # one simple choice for round schedules is to have constant
 # conditional stopping probability (round stopping probability)
 # (such a scheme was used in the paper we just published)
 
-# let's do a very coarse linear search over possible stopping
+# so we could do this: let's do a very coarse linear search over possible stopping
 # probabilities, to see which one minimizes the total work on average
 #candidate_sprobs = np.arange(.1, 1, .1)
-sprob = .9
+#sprob = .9
 
-# since infinite rounds might get old, let's have a max
-MAX_ROUNDS = 3 # of course, so does 100
+# on the other hand, another feasible scheme is constant marginal round size
+# which is another scheme that we entertained in that paper
+# for instance, the marginal round size might make sense within some logistical constraints,
+# in which case that same marginal round size could be more feasible than other choices
+marginal_round_size = 100
+
+# since infinite rounds might take too long, let's have a max
+MAX_ROUNDS = 5
 
 # this workload minimization only makes sense in the context of a certain audit and its parameters
 # audit parameters
-p1 = .6 # announced proportion of winner votes
+margin = .2 # announced margin
+p1 = (1 + margin) / 2 # announced proportion of winner votes
 p0 = .5 # tie
 alpha = .1 # risk limit
 
-#for sprob in candidate_sprobs:
-# expected number of rounds 
-num_rounds = 1
+# let's compute the cost of this round schedule [marginal_round_size, marginal_round_size, ...]
+# cost(round schedule) = (exp total num ballots) * (per ballot cost) + (exp num rounds) * (per ballot cost)
+
+# FIRST ROUND
+cur_round = 1
 exp_num_rounds = 0
-prob_reach = 1
+exp_num_ballots = 0
+prob_reach_this_round = 1
+
+kmin = kmin_minerva2(cur_round, marginal_round_size, 0, 0, p1, p0, alpha)
+sprob = binom.sf(kmin, marginal_round_size, p1)
+print(sprob)
+
+exp_num_rounds += cur_round * sprob
+exp_num_ballots += marginal_round_size * sprob
+
+nprev = 0
+nprev += marginal_round_size
+
+# SECOND ROUND
+# for the next round, the audit has a different sprob depending on the previous round's cumulative sample
+# so, for each of the previous samples, we compute the sprobs and update the expectations accordingly
+min_possible_kprev = 0
+max_possible_kprev = kmin - 1
+for kprev in range(min_possible_kprev, max_possible_kprev + 1):
+    """ to do this slowly, we can search for a minerva 2 kmin
+    kmin = kmin_minerva2(cur_round, marginal_round_size, kprev, nprev, p1, p0, alpha)
+    sprob = binom.sf(kmin, marginal_round_size, p1)
+    """
+    # to do this more quickly, we make the observation that:
+    #   sigma(kprev,nprev) * tau_1(k',n') >= 1 / alpha 
+    # is equivalent to
+    #   tau_1(k',n') >= 1 / alpha' where alpha' = alpha / sigma(kprev,nprev)
+    # so we can, for a modified risk limit, find the minerva 1.0 kmin
+    # we can do so using a look-up table (for alpha, round size, what is minerva 1.0 first round kmin?)
+
+    #kmin = lookup(sigma
+
+
+"""
 while num_rounds < MAX_ROUNDS:
-    exp_num_rounds += num_rounds * (sprob * prob_reach)
+    # what is the stopping probability in round cur_round?
+
+    # TODO compute
+    sprob = #TODO compute stopping probability for round cur_round drawing marginalj
+
+    exp_num_rounds += num_rounds * (prob_reach)
 
     # prepare for next round
     num_rounds += 1
@@ -73,7 +120,6 @@ while r < MAX_ROUNDS:
 # first round size is fixed
 
 
-"""
 what if an adversary selected announced p to increase audit workload?
 
 minimax - they choose p, we choose round schedule and risk schedule

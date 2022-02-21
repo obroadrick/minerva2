@@ -37,9 +37,13 @@ def omega1(k, n, p_1, p_0):
     """ Computes omega for round j = 1. """
     num = 0
     denom = 0
+    """
     for d in range(k,n+1):
         num += binom.pmf(d, n, p_1)
         denom += binom.pmf(d, n, p_0)
+    """
+    num = binom.sf(k-1,n,p_1)
+    denom = binom.sf(k-1,n,p_0)
     if denom == 0:
         return -1
     return num / denom
