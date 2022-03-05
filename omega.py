@@ -47,9 +47,8 @@ def omega1(k, n, p_1, p_0):
         num += binom.pmf(d, n, p_1)
         denom += binom.pmf(d, n, p_0)
     """
-    num += binom.sf(k-1, n, p_1)
-    denom += binom.sf(k-1, n, p_0)
- 
+    num = binom.sf(k-1,n,p_1)
+    denom = binom.sf(k-1,n,p_0)
     if denom == 0:
         return -1
     return num / denom
