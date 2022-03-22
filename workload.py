@@ -36,9 +36,12 @@ marginal_round_size = 100
 MAX_ROUNDS = 5
 
 # this workload minimization only makes sense in the context of a certain audit and its parameters
+# we begin with the presidenital contest in pennsylvania in 2020
 # audit parameters
-margin = .2 # announced margin
-p1 = (1 + margin) / 2 # announced proportion of winner votes
+biden = 3458229
+trump = 3377674
+margin = (biden - trump) / (trump + biden) # announced margin
+p1 = biden / (trump + biden) # announced proportion of winner votes
 p0 = .5 # tie
 alpha = .1 # risk limit
 
@@ -52,6 +55,7 @@ exp_num_ballots = 0
 prob_reach_this_round = 1
 
 kmin = kmin_minerva2(cur_round, marginal_round_size, 0, 0, p1, p0, alpha)
+print(kmin)
 sprob = binom.sf(kmin, marginal_round_size, p1)
 print(sprob)
 
@@ -64,13 +68,13 @@ nprev += marginal_round_size
 # SECOND ROUND
 # for the next round, the audit has a different sprob depending on the previous round's cumulative sample
 # so, for each of the previous samples, we compute the sprobs and update the expectations accordingly
+"""
 min_possible_kprev = 0
 max_possible_kprev = kmin - 1
 for kprev in range(min_possible_kprev, max_possible_kprev + 1):
-    """ to do this slowly, we can search for a minerva 2 kmin
+    to do this slowly, we can search for a minerva 2 kmin
     kmin = kmin_minerva2(cur_round, marginal_round_size, kprev, nprev, p1, p0, alpha)
     sprob = binom.sf(kmin, marginal_round_size, p1)
-    """
     # to do this more quickly, we make the observation that:
     #   sigma(kprev,nprev) * tau_1(k',n') >= 1 / alpha 
     # is equivalent to
@@ -78,8 +82,9 @@ for kprev in range(min_possible_kprev, max_possible_kprev + 1):
     # so we can, for a modified risk limit, find the minerva 1.0 kmin
     # we can do so using a look-up table (for alpha, round size, what is minerva 1.0 first round kmin?)
 
-    #kmin = lookup(sigma
+    #kmin = lookup(risk
 
+"""
 
 """
 while num_rounds < MAX_ROUNDS:

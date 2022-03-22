@@ -1,5 +1,5 @@
 """
-As a function of risk limit and round size, the first round Minerva 1.0 kmin is usually found via search.
+As a function of risk limit and round size, the first round Minerva 1.0 kmin is found via search.
 To save time in utilities that need to know the same kmins many times over, it may be useful to have a look-up table
 for such kmins. This script generates such a look-up table.
 """
