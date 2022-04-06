@@ -47,8 +47,23 @@ def omega1(k, n, p_1, p_0):
         num += binom.pmf(d, n, p_1)
         denom += binom.pmf(d, n, p_0)
     """
-    num = binom.sf(k-1,n,p_1)
-    denom = binom.sf(k-1,n,p_0)
+    numdist = binom.pmf(range(n),n,p_1)
+    denomdist = binom.pmf(range(n),n,p_0)
+    num = sum(numdist[k:])
+    denom = sum(denomdist[k:])
+    if denom == 0:
+        if num == 0:
+            # we are far to the right of both means to get nonzero tails
+            return 10**10 # since this is sufficient evidence
+        else:
+            # if we are too far to the right of the null mean but maybe not to
+            # the right of the alt mean, then there is great evidence here for the 
+            # alt over the null
+            return 10**10
+
+    #num = binom.sf(k-1,n,p_1)
+    #denom = binom.sf(k-1,n,p_0)
+    #print(num,denom)
     if denom == 0:
         return -1
     return num / denom

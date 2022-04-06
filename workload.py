@@ -1,7 +1,7 @@
 from sigma import sigma
 from omega import omega
 from kmin_bravo import kmin_bravo
-from kmin_minerva2 import kmin_minerva2
+from kmin_minerva import kmin_minerva
 from round_size_bravo import round_size_bravo
 from round_size_minerva2 import round_size_minerva2
 import numpy as np
@@ -17,6 +17,16 @@ from scipy.stats import binom
 ballotcost = 1
 roundcost = 10 # mostly due to opening boxes (but also entering sample, getting decision, preparing next sample)
 
+# this workload minimization only makes sense in the context of a certain audit and its parameters
+# we begin with the presidenital contest in pennsylvania in 2020
+# audit parameters
+biden = 3458229
+trump = 3377674
+margin = (biden - trump) / (trump + biden) # announced margin
+p1 = biden / (trump + biden) # announced proportion of winner votes
+p0 = .5 # tie
+alpha = .1 # risk limit
+
 # one simple choice for round schedules is to have constant
 # conditional stopping probability (round stopping probability)
 # (such a scheme was used in the paper we just published)
@@ -30,21 +40,10 @@ roundcost = 10 # mostly due to opening boxes (but also entering sample, getting 
 # which is another scheme that we entertained in that paper
 # for instance, the marginal round size might make sense within some logistical constraints,
 # in which case that same marginal round size could be more feasible than other choices
-marginal_round_size = 100
+marginal_round_size = 100000
 
 # since infinite rounds might take too long, let's have a max
 MAX_ROUNDS = 5
-
-# this workload minimization only makes sense in the context of a certain audit and its parameters
-# we begin with the presidenital contest in pennsylvania in 2020
-# audit parameters
-biden = 3458229
-trump = 3377674
-margin = (biden - trump) / (trump + biden) # announced margin
-p1 = biden / (trump + biden) # announced proportion of winner votes
-p0 = .5 # tie
-alpha = .1 # risk limit
-
 # let's compute the cost of this round schedule [marginal_round_size, marginal_round_size, ...]
 # cost(round schedule) = (exp total num ballots) * (per ballot cost) + (exp num rounds) * (per ballot cost)
 
@@ -54,7 +53,7 @@ exp_num_rounds = 0
 exp_num_ballots = 0
 prob_reach_this_round = 1
 
-kmin = kmin_minerva2(cur_round, marginal_round_size, 0, 0, p1, p0, alpha)
+kmin = kmin_minerva(marginal_round_size, p1, p0, alpha)
 print(kmin)
 sprob = binom.sf(kmin, marginal_round_size, p1)
 print(sprob)
