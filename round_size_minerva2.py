@@ -21,5 +21,3 @@ def round_size_minerva2(r, k, n, p_1, p_0, alpha, sprob=.9, lower=1, upper=10**1
                 return n+mnew
             else:
                 return round_size_minerva2(r, k, n, p_1, p_0, alpha, sprob, mnew - skip, mnew, int(skip / 10))
-
-
