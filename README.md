@@ -1,6 +1,6 @@
 # providence
 Providence is a flexible round-by-round Risk-Limiting Audit.
-This is my personal code for the Providence audit. I use this repo for general exploration as well as test data generation for testing the code in r2b2...
+This is my personal code for the Providence audit. I use this repo for general exploration as well as test data generation for testing the code in [r2b2](https://github.com/gwexploratoryaudits/r2b2)...
 
 ## Example
 Here is a sample of some computations that this code can perform:  
