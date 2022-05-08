@@ -89,10 +89,19 @@ while roundnum <= MAX_ROUNDS - 1:
         alphaprime = alpha * sigmaprev
         if alphaprime >= 1:
             uhohcount += 1
-            print('uh oh',uhohcount,alphaprime)
+            """
+            print('\nuh oh',uhohcount,'alphaprime',alphaprime)
+            print('sigmaprev',sigmaprev)
+            print('nprev',nprev,'kprev',kprev)
+            print('roundnum',roundnum)
             #exit()
-            alphaprime = 1
-        kmin = lookupkmin(alphaprime)
+            """
+            # need to compute alphaprime on our own
+            print(uhohcount)
+            kmin = kmin_minerva(marginal_round_size, p1, p0, alphaprime)
+            print('found kmin',kmin)
+        else:
+            kmin = lookupkmin(alphaprime)
         sprob = pr_kprevs[kprev] * binom.sf(kmin-1, marginal_round_size, p1)
         cond_sprob2 += sprob
     print('cond_sprob2',cond_sprob2)

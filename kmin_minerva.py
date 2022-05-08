@@ -17,9 +17,10 @@ def kmin_minerva(n, p1, p0, alpha):
     """
     # binary search
     left = int(math.floor(n * p0) + 1)
-    right = kmin_search_upper_bound(n, p1, p0, alpha)
+    right = n#kmin_search_upper_bound(n, p1, p0, alpha)
 
     # first check that the audit passes if n winner ballots are found 
+    #print(omega(1, n, n, 0, 0, p1, p0), 1/alpha)
     passes = omega(1, n, n, 0, 0, p1, p0) >= 1/alpha
     if not passes:
         return -1
@@ -41,7 +42,7 @@ def binary(left, right, n, p1, p0, alpha):
     parameters between left and right. Returns -1 if no such kmin 
     exists.
     """
-    if left + 1 == right:
+    if left + 1 >= right:
         return int(right)
 
     mid = (left + right) // 2
@@ -57,14 +58,3 @@ def stopping_condition(k, n, p1, p0, alpha):
         Returns True if the audit stops, False otherwise.
     """
     return omega(1,k,n,0,0,p1,p0) >= 1/alpha
-
-def kmin_search_upper_bound(n, p1, p0, alpha):
-    """
-    The Minerva kmin is no greater than the BRAVO kmin, so the latter serves
-    as an upper bound for a kmin binary search.
-    (Solve for k: (p/.5)^k * ((1-p)/.5)^(n-k) > 1/alpha)
-    """
-
-    x = (1 - p1) / p0
-    y = math.log(p1 / (1 - p1))
-    return math.ceil((-n * math.log(x) - math.log(alpha)) / y)
