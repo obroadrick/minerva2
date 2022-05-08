@@ -42,7 +42,7 @@ def binary(left, right, n, p1, p0, alpha):
     exists.
     """
     if left + 1 == right:
-        return right
+        return int(right)
 
     mid = (left + right) // 2
     passes = stopping_condition(mid,n,p1,p0,alpha)

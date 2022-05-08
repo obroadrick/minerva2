@@ -38,7 +38,7 @@ riskdelta = .001
 risk_min = 0 + riskdelta
 risk_max = 1 # always between zero and 1... i checked this/did a lil proof for it... in email inbox with subject 'risk range'
 rsize = 10000
-kmins = np.zeros(int((risk_max - risk_min) / riskdelta)) - 1 # a -1 will denote 'no kmin exists' (or an error in general)
+kmins = np.zeros(int(1 / riskdelta)) - 1 # a -1 will denote 'no kmin exists' (or an error in general)
 for alpha in tqdm(np.arange(risk_min, risk_max+riskdelta, riskdelta)):
     kmin = kmin_minerva(rsize, p1, p0, alpha)
     kmins[int(alpha * (risk_max - risk_min) / riskdelta) - 1] = kmin
