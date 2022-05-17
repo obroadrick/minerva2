@@ -63,7 +63,7 @@ print('after round '+str(roundnum)+', expected ballots '+str(exp_num_ballots)+' 
 nprev = 0
 nprev += marginal_round_size
 kprevs = np.arange(kmin1,dtype=int) # 0 thru kmin-1 (so index is same as the kprev, nicely)
-pr_k_orig = [1] # 0 is only possible starting k value and it occurs w prob 1
+pr_k_orig = [1] # 0 is only possible starting k value (so it occurs w prob 1)
 marginal_pr_ks = binom.pmf(kprevs, nprev, p1)
 pr_kprevs = convolve(pr_k_orig, marginal_pr_ks, method='direct')
 # going into second round we know that kprevs are just a binomial but also as above can be convolution still
@@ -71,19 +71,19 @@ pr_kprevs = convolve(pr_k_orig, marginal_pr_ks, method='direct')
 
 # SECOND ROUND (and beyond by induction!)# already set for each time thru this new round loop: kprevs, nprev, pr_kprevs
 # for rounds 2 and on, the audit has a different behavior for each kprev (cumulative sample of previous winner ballots)
-# so, for each possible previous sample, we compute the sprobs and update the expectations accordingly
 while roundnum <= MAX_ROUNDS - 1:
     roundnum += 1
     print('round',roundnum)
-    n2 = nprev + marginal_round_size
+    n = nprev + marginal_round_size
     prob_reach2 = 1 - sprob1
     cond_sprob2 = 0
+    # for each possible previous sample, we compute the sprobs and update the expectations accordingly
     for kprev in tqdm(kprevs):
         # to do this more quickly, we make the observation that:
         #   sigma(kprev,nprev) * tau_1(k',n') >= 1 / alpha 
         # is equivalent to
         #   tau_1(k',n') >= 1 / alpha' where alpha' = alpha * sigma(kprev,nprev)
-        # so we can, for a modified risk limit, find the minerva 1.0 kmin
+        # so we can, for a modified risk limit, find the minerva kmin
         # we do so using a precomputed look-up table to save time 
         sigmaprev = sigma(kprev, nprev, p1, p0)
         alphaprime = alpha * sigmaprev
@@ -97,18 +97,20 @@ while roundnum <= MAX_ROUNDS - 1:
             #exit()
             """
             # need to compute alphaprime on our own
-            print(uhohcount)
+            #print(uhohcount)
             kmin = kmin_minerva(marginal_round_size, p1, p0, alphaprime)
-            print('found kmin',kmin)
+            #print('found kmin',kmin)
         else:
             kmin = lookupkmin(alphaprime)
         sprob = pr_kprevs[kprev] * binom.sf(kmin-1, marginal_round_size, p1)
         cond_sprob2 += sprob
+
+    # now update the sprobs for this round
     print('cond_sprob2',cond_sprob2)
     sprob2 = cond_sprob2 * prob_reach2 #sprob2 then is the 'absolute' probability that the audit stops in round 2
     print('sprob2',sprob2)
     exp_num_rounds += roundnum * sprob2
-    exp_num_ballots += marginal_round_size * prob_reach2
+    exp_num_ballots += marginal_round_size * sprob2#prob_reach2
     print('after round '+str(roundnum)+', expected ballots '+str(exp_num_ballots)+' and expected rounds '+str(exp_num_rounds))
 
     # it will be necessary in the next round to know the sprob for each kprev so we compute that here now
@@ -121,40 +123,8 @@ while roundnum <= MAX_ROUNDS - 1:
     print('len(pr_k2s)',len(pr_k2s))
 
     # before going back thru this loop, we need to update kprevs, nprev, and pr_kprevs
-    kprevs = k2s
-    nprev = n2
+    kprevs = np.zeros(len(pr_k2s), dtype=int)
+    for i in range(len(kprevs)):
+        kprevs[i] = int(i)
+    nprev = n
     pr_kprevs = pr_k2s
-
-"""
-# expected number of ballots sampled
-# n1, n2, n3, ... to achieve sprob is fixed for bravo and minerva 1.0, 
-# so this computation is easier for them
-r = 1
-prob_reach = 1
-while r < MAX_ROUNDS:
-    #exp_num_rounds += num_rounds * (sprob * prob_reach)
-    #round_size_bravo(r, k, n, p_1, p_0, alpha, sprob=.9, lower=1, upper=10**100, skip=10000):
-    #bravo_size = round_size_bravo(r, 
-    # NOTE this round size depends on k from the previous round, so needs to be computed as 
-    # sum of (prob of each possible preceding k value times its associated next sample size)
-
-    # compute expected current round size by summing over all possible previous k
-    for k in range(n):
-        bravo_size = round_size_bravo(r, k, n, p1, p0, alpha, sprob=sprob)
-
-    exp_num_ballots += bravo_size * (sprob * prob_reach)
-
-    # prepare for next round
-    r += 1
-    prob_reach = prob_reach * (1 - sprob)
-
-# compute average number of ballots sampled for given sprob
-# first round size is fixed
-
-
-what if an adversary selected announced p to increase audit workload?
-
-minimax - they choose p, we choose round schedule and risk schedule
-
-or simply we always choose a certain p as part of the workload minimization
-"""

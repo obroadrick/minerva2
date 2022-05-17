@@ -1,0 +1,33 @@
+"""
+# expected number of ballots sampled
+# n1, n2, n3, ... to achieve sprob is fixed for bravo and minerva 1.0, 
+# so this computation is easier for them
+r = 1
+prob_reach = 1
+while r < MAX_ROUNDS:
+    #exp_num_rounds += num_rounds * (sprob * prob_reach)
+    #round_size_bravo(r, k, n, p_1, p_0, alpha, sprob=.9, lower=1, upper=10**100, skip=10000):
+    #bravo_size = round_size_bravo(r, 
+    # NOTE this round size depends on k from the previous round, so needs to be computed as 
+    # sum of (prob of each possible preceding k value times its associated next sample size)
+
+    # compute expected current round size by summing over all possible previous k
+    for k in range(n):
+        bravo_size = round_size_bravo(r, k, n, p1, p0, alpha, sprob=sprob)
+
+    exp_num_ballots += bravo_size * (sprob * prob_reach)
+
+    # prepare for next round
+    r += 1
+    prob_reach = prob_reach * (1 - sprob)
+
+# compute average number of ballots sampled for given sprob
+# first round size is fixed
+
+
+what if an adversary selected announced p to increase audit workload?
+
+minimax - they choose p, we choose round schedule and risk schedule
+
+or simply we always choose a certain p as part of the workload minimization
+"""
