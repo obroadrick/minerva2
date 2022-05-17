@@ -37,6 +37,7 @@ for alpha in tqdm(np.arange(risk_min, risk_max+riskdelta, riskdelta)):
 riskdelta = .001
 risk_min = 0 + riskdelta
 risk_max = 1 # always between zero and 1... i checked this/did a lil proof for it... in email inbox with subject 'risk range'
+# that proof was wrong! since it assumed that bravo stop => providence stop but for rounds 3 and on that is not necessarily true
 rsize = 10000
 kmins = np.zeros(int(1 / riskdelta)) - 1 # a -1 will denote 'no kmin exists' (or an error in general)
 for alpha in tqdm(np.arange(risk_min, risk_max+riskdelta, riskdelta)):
