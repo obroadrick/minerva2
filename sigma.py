@@ -24,4 +24,13 @@ def sigma(k, n, p1, p0):
     # (k)log(p1) + (n-k)log(1-p1) - ((k)log(p0) + (n-k)log(1-p0))
     logsigma = k*math.log(p1) + (n-k)*math.log(1-p1) - k*math.log(p0) - (n-k)*math.log(1-p0)
 
-    return math.exp(logsigma)
+    # for extremely large logsigma, math.exp(logsigma) will be too large for Python and return an error,
+    # so let's manually return some extremely high value 
+    try:
+        ans = math.exp(logsigma)
+    except OverflowError:
+        ans = float('inf')
+
+    return ans
+
+    #return math.exp(logsigma)

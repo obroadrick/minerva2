@@ -33,10 +33,43 @@ def omega2(dnew, mnew, kprev, nprev, p_1, p_0):
         num += binom.pmf(d, mnew, p_1)
         denom += binom.pmf(d, mnew, p_0)
     """
+    """
+    numdist = binom.pmf(range(mnew),mnew,p_1)
+    denomdist = binom.pmf(range(mnew),mnew,p_0)
+    num = sum(numdist[dnew:])
+    denom = sum(denomdist[dnew:])
+    if denom == 0:
+        if num == 0:
+            # we are far to the right of both means to get nonzero tails
+            return 10**10 # since this is sufficient evidence
+        else:
+            # if we are too far to the right of the null mean but maybe not to
+            # the right of the alt mean, then there is great evidence here for the 
+            # alt over the null
+            return 10**10
+
+    if denom == 0:
+        return -1
+    return num / denom
+    print('how did you reach this???')
+    """
+
     # instead of above commented code, we use sf which gives 1-cdf
     num += binom.sf(dnew-1, mnew, p_1)
     denom += binom.sf(dnew-1, mnew, p_0)
+    if denom == 0:
+        if num == 0:
+            # we are far to the right of both means to get nonzero tails
+            return 10**10 # since this is sufficient evidence
+        else:
+            # if we are too far to the right of the null mean but maybe not to
+            # the right of the alt mean, then there is great evidence here for the 
+            # alt over the null
+            return 10**10
+
+    #print(sigmaprev, num, denom)
     return sigmaprev * num / denom
+
 
 def omega1(k, n, p_1, p_0):
     """ Computes omega for round j = 1. """
