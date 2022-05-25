@@ -14,7 +14,7 @@ START_TIME = time.time()
 #temp
 import matplotlib.pyplot as plt
 
-SPARSITY = 25          # number of ballots skipped when making coarse pass over distributions
+SPARSITY = 12          # number of ballots skipped when making coarse pass over distributions
 SPROB_THRESHOLD = .95  # minimum cumulative probability of stopping to halt computation and make final estimate
 
 uhohcount = 0
@@ -443,6 +443,7 @@ while roundnum < MAX_ROUNDS:
     pr_kprevs = pr_k2s
     print('for sparsity',sparsity,'- exp_workload',exp_workload)
 
+###########
 # since our computations only went deep enough to explore audit paths with cumulative probabilty of stopping
 # around THRESHOLD (95%..) we can now make an estimate for the behavior of the rest of the unexplored paths
 # using information we have about preceeding paths... or blindly in some reasonable way
@@ -453,31 +454,52 @@ assumedsprob = 1 - sum(sprobs) #assume all the audits stop in that next round
 #note: (necessarily a conservative estimate...so later could try assuming all stop in two rounds)
 exp_num_rounds += roundnum * assumedsprob
 exp_num_ballots += (marginal_round_size*roundnum) * assumedsprob
-exp_workload = ballotcost*exp_num_ballots + roundcost*exp_num_rounds
+exp_workload = ballotcost * exp_num_ballots + roundcost * exp_num_rounds
 print('complete estimated workload:',exp_workload)
 
+###########
 # we can also impose this estimate technique on all the ealier estimates along the way of the computations to see how it has approached a value (or not!)
+roundnum = 0
+exp_num_rounds, exp_num_ballots = 0, 0
+mod_exp_wloads = []
+for sprob in sprobs:
+    roundnum += 1
+    n = marginal_round_size * roundnum
+    exp_num_rounds += roundnum * sprob
+    exp_num_ballots += n * sprob
+    exp_workload = ballotcost * exp_num_ballots + roundcost * exp_num_rounds
+    # now assume that all other audits stop in the next round and update the estimate accordingly
+    rs = exp_num_rounds + (roundnum + 1) * (1 - sum(sprobs[0:roundnum]))
+    bs = exp_num_ballots + (roundnum + 1)*marginal_round_size * (1 - sum(sprobs[0:roundnum]))
+    w = ballotcost * bs + roundcost * rs
+    mod_exp_wloads.append(w)
 
 
-
+###########
 ## let's plot the things of interest that we have computed
 # cumulative sprobs
 print('will plot now...')
-plt.subplot(211)
+plt.subplot(311)
 plt.title('cumulative probability of stopping by round')#interesting... obviously
 cumsprobs = [sum(sprobs[0:i]) for i in range(len(sprobs))]
 round_numbers = np.arange(1,roundnum+1,1)
 plt.plot(round_numbers, cumsprobs, 'bo')
 plt.xlabel('round number')
 plt.ylabel('cumulative probability of stopping')
-plt.subplot(212)
+plt.subplot(312)
 plt.title('estimate/expected workload by round computed')#could give insight into how much the estimate is changing/increasing as computations deepen/go on
-plt.plot(round_numbers, exp_workloads, 'rx')
+plt.plot(round_numbers, exp_workloads, 'bo')
 plt.xlabel('round numbers')
 plt.ylabel('expected workload estiamte')
+plt.subplot(313)
+plt.title('estimate/expected workload by round computed with crude completion estimate')# clear building on previous (gives insight into convergence with the completion est)
+plt.plot(round_numbers, mod_exp_wloads, 'bo')
+plt.xlabel('round numbers')
+plt.ylabel('expected workload estiamte with crude completion estimate')
 plt.show()
 
 
+###########
 # time elapsed 
 print('total time (mins):',(time.time() - START_TIME)/60)
 
