@@ -1,3 +1,12 @@
+"""
+this script attempts to, for a given contest and risk limit and audit type, Providence
+at the moment, estimate the expected number of ballots and expected number of rounds
+of the audit.
+
+these are values for which there is no known analytic approximation; simulations have 
+been used in the literature thus far.
+
+"""
 from sigma import sigma
 from omega import omega
 from kmin_bravo import kmin_bravo
@@ -9,7 +18,6 @@ from scipy.stats import binom
 from tqdm import tqdm
 from scipy.signal import convolve
 
-#temp
 import matplotlib.pyplot as plt
 
 uhohcount = 0
@@ -21,17 +29,29 @@ roundcost = 1000 # mostly due to opening boxes (but also entering sample, gettin
 # this workload minimization only makes sense in the context of a certain audit and its parameters
 # we begin with the presidenital contest in pennsylvania in 2020
 # audit parameters
+"""
 biden = 3458229
 trump = 3377674
 margin = (biden - trump) / (trump + biden) # announced margin
 p1 = biden / (trump + biden) # announced proportion of winner votes
 p0 = .5 # tie
 alpha = .1 # risk limit
+"""
+#michigan
+biden = 2804040
+trump = 2649852
+margin = (biden - trump) / (trump + biden) # announced margin
+p1 = biden / (trump + biden) # announced proportion of winner votes
+p0 = .5 # tie
+alpha = .1 # risk limit
+
 
 # option 1: use fixed sprob and find which sprob minimizes workload
 # option 2: we could use fixed marginal round sizes finding which minimizes workload
 # both entertined in previous paper, we begin by trying option 2
-marginal_round_size = 10000 #constant.
+sprobs = [0.95, 0.9, 0.85, 0.8, 0.75, 0.7, 0.65, 0.6, 0.55, 0.5, 0.45, 0.4, 0.35, 0.3, 0.25, 0.2, 0.15, 0.1, 0.05]
+first_round_sizes = [11154,8813,7425,6434,5700,5125,4599,4211,3815,3458,3181,2888,2625,2386,2129,1911,1672,1388,1117]
+marginal_round_size = first_round_sizes[0] #constant.
 
 # since infinite rounds might take too long, let's have a max
 MAX_ROUNDS = 5
@@ -40,7 +60,7 @@ MAX_ROUNDS = 5
 
 # kmins are computed in advance to make sprob calculations faster (can use lookup table not search)
 divs = 1000
-kmins = np.load('kmins-'+str(divs)+'riskdivs.npy')
+kmins = np.load('michigan-kmins-'+str(divs)+'riskdivs.npy')
 def lookupkmin(risk):
     half = (1 / divs) / 2
     ith = int((risk + half) * divs)
@@ -101,7 +121,7 @@ while roundnum <= MAX_ROUNDS - 1:
             #print(uhohcount, kprev, nprev, p1, p0, alphaprime, pr_kprevs[kprev], sigmaprev)
             # need to compute alphaprime from scratch...
             kmin = kmin_minerva(marginal_round_size, p1, p0, alphaprime)
-            plt.plot(pr_kprevs)
+            #plt.plot(pr_kprevs)
         else:
             kmin = lookupkmin(alphaprime)
         sprob = pr_kprevs[kprev] * binom.sf(kmin-1, marginal_round_size, p1)
@@ -110,11 +130,35 @@ while roundnum <= MAX_ROUNDS - 1:
     # now print the sprobs for this round
     #sprob2 = cond_sprob2 * prob_reach2 #sprob2 then is the 'absolute' probability that the audit stops in round 2
     sprobs.append(sprob2) #keep track of this sprob so that we can know the cumulative stopping probability
-    print('round',roundnum,'sprob',sprob2)
+    print('round',roundnum,'absolute sprob',sprob2)
+    print('round',roundnum,'conditional sprob',sprob2/prob_reach2)
     print('round',roundnum,'cumulative sprob',sum(sprobs))
     exp_num_rounds += roundnum * sprob2
     exp_num_ballots += n * sprob2
     print('after round '+str(roundnum)+', expected ballots '+str(exp_num_ballots)+' and expected rounds '+str(exp_num_rounds))
+
+    # the values exp_num_rounds and exp_num_ballots are also just the sum of the terms
+    # in the infinite list of terms in the expectation formula 1*p1 + 2*p2+....
+    # but we at the very least can normalize it to get a better estimate of those values based
+    # on the computation done so far in the sense that if s=p1+p2+...+pn is how much of it we know
+    # so far (or have estimated i mean) then we know that we can increase or estimate by a factor
+    # of 1/s * cur_est  to get something more reasonable.
+    #TODO
+
+    # doing so in this way sort of assumes that the estimates of the first n terms have value
+    # comparable to the remaining n terms. so a better approach may be to take the first
+    # n terms, fit a curve (polynomial?) to them and then get a prediction of the rest of the
+    # terms in the sequence to use to make the estimate.... this is worht trying after the
+    # more basic version of scaling the estimate
+    #TODO
+
+
+    ### now check how big a difference this round made on the overall estimate of the expected
+    # number of rounds and expected number of ballots
+    # once this difference is less than some threshold we stop the estimate
+    #diff_exp_num_rounds = roundnum * sprob2
+    #TODO
+
 
     # it will be necessary in the next round to know probability of getting each possible kprev: so we compute that here now
     # in minerva you can simply lop of the previous distributions tail and convolve with the marginal draw distribution,
@@ -123,8 +167,8 @@ while roundnum <= MAX_ROUNDS - 1:
     k2s = np.arange(0,biggest_possible_k2+1,1,dtype=int) # 0 thru kmin-1 (so index is same as the kprev, nicely)
     marginal_pr_ks = binom.pmf(range(marginal_round_size+1), marginal_round_size, p1)   
     pr_k2s = np.zeros_like(k2s, dtype=float)
-    k2sparsity = 50 # we skip (and then fill in approximately) a bunch of k2s in the distribution
-    kprevsparsity = 50 # we skip (and then fill in approximately) a bunch of kprevs when computing pr_k2 for a particular k2
+    k2sparsity = 5 # we skip (and then fill in approximately) a bunch of k2s in the distribution
+    kprevsparsity = 5 # we skip (and then fill in approximately) a bunch of kprevs when computing pr_k2 for a particular k2
     last_pr_k2, second_to_last_pr_k2 = -1, -1
     last_k2, second_to_last_k2 = -1, -1
     print('computing probability distribution for next round...')

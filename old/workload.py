@@ -18,20 +18,32 @@ roundcost = 10 # mostly due to opening boxes (but also entering sample, getting 
 # this workload minimization only makes sense in the context of a certain audit and its parameters
 # we begin with the presidenital contest in pennsylvania in 2020
 # audit parameters
+"""
 biden = 3458229
 trump = 3377674
 margin = (biden - trump) / (trump + biden) # announced margin
 p1 = biden / (trump + biden) # announced proportion of winner votes
 p0 = .5 # tie
 alpha = .1 # risk limit
+"""
+#michigan
+biden = 2804040
+trump = 2649852
+margin = (biden - trump) / (trump + biden) # announced margin
+p1 = biden / (trump + biden) # announced proportion of winner votes
+p0 = .5 # tie
+alpha = .1 # risk limit
+
 
 # option 1: use fixed sprob and find which sprob minimizes workload
 # option 2: we could use fixed marginal round sizes finding which minimizes workload
 # both entertined in previous paper, we begin by trying option 2
-marginal_round_size = 10000 #constant.
+sprobs = [0.95, 0.9, 0.85, 0.8, 0.75, 0.7, 0.65, 0.6, 0.55, 0.5, 0.45, 0.4, 0.35, 0.3, 0.25, 0.2, 0.15, 0.1, 0.05]
+first_round_sizes = [11154,8813,7425,6434,5700,5125,4599,4211,3815,3458,3181,2888,2625,2386,2129,1911,1672,1388,1117]
+marginal_round_size = first_round_sizes[0] #constant.
 
 # since infinite rounds might take too long, let's have a max
-MAX_ROUNDS = 5
+MAX_ROUNDS = 100
 # let's compute the cost of this round schedule [1*marginal_round_size, 2*marginal_round_size, ...]
 # cost(round schedule) = (expec total num ballots) * (per ballot cost) + (expec num rounds) * (per ballot cost)
 
@@ -112,6 +124,25 @@ while roundnum <= MAX_ROUNDS - 1:
     exp_num_rounds += roundnum * sprob2
     exp_num_ballots += marginal_round_size * sprob2#prob_reach2
     print('after round '+str(roundnum)+', expected ballots '+str(exp_num_ballots)+' and expected rounds '+str(exp_num_rounds))
+    # the values exp_num_rounds and exp_num_ballots are also just the sum of the terms
+    # in the infinite list of terms in the expectation formula 1*p1 + 2*p2+....
+    # but we at the very least can normalize it to get a better estimate of those values based
+    # on the computation done so far in the sense that if s=p1+p2+...+pn is how much of it we know
+    # so far (or have estimated i mean) then we know that we can increase or estimate by a factor
+    # of 1/s * cur_est  to get something more reasonable.
+
+    # doing so in this way sort of assumes that the estimates of the first n terms have value
+    # comparable to the remaining n terms. so a better approach may be to take the first
+    # n terms, fit a curve (polynomial?) to them and then get a prediction of the rest of the
+    # terms in the sequence to use to make the estimate.... this is worht trying after the
+    # more basic version of scaling the estimate
+
+
+    ### now check how big a difference this round made on the overall estimate of the expected
+    # number of rounds and expected number of ballots
+    # once this difference is less than some threshold we stop the estimate
+    #diff_exp_num_rounds = roundnum * sprob2
+    #TODO
 
     # it will be necessary in the next round to know the sprob for each kprev so we compute that here now
     biggest_possible_k2 = nprev + marginal_round_size 

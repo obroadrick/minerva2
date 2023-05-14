@@ -1,3 +1,7 @@
+""" 
+do my analytic num ballots and num round estimates converge 
+as the sparsity parameters decrease?
+"""
 from sigma import sigma
 from omega import omega
 from kmin_bravo import kmin_bravo
@@ -28,7 +32,7 @@ def lookupkmin(risk):
     return kmins[idx]
 
 
-for sparsity in [200,100,50,25,12]:
+for sparsity in [200,150,100,50,25,12]:
     uhohcount = 0
     # if each ballot has fixed cost, and rounds have no overhead, selection-ordered bravo is the most efficient RLA
     # but since there is at least some overhead, which round schedule minimizes cost (workload)
@@ -61,10 +65,10 @@ for sparsity in [200,100,50,25,12]:
     #get kmin from lookup table and use it to compute easily the sprob
     kmin1 = lookupkmin(alpha)
     sprob1 = binom.sf(kmin1-1, marginal_round_size, p1)
-    print('round',roundnum,'sprob',sprob1)
+    #print('round',roundnum,'sprob',sprob1)
     exp_num_rounds += roundnum * sprob1
     exp_num_ballots += marginal_round_size * prob_reach_this_round
-    print('after round '+str(roundnum)+', expected ballots '+str(exp_num_ballots)+' and expected rounds '+str(exp_num_rounds))
+    #print('after round '+str(roundnum)+', expected ballots '+str(exp_num_ballots)+' and expected rounds '+str(exp_num_rounds))
     nprev = 0
     nprev += marginal_round_size
     kprevs = np.arange(nprev+1,dtype=int)
@@ -81,13 +85,14 @@ for sparsity in [200,100,50,25,12]:
     sprobs = [sprob1]
     while roundnum <= MAX_ROUNDS - 1:
         roundnum += 1
-        print('round',roundnum)
+        #print('round',roundnum)
         n = nprev + marginal_round_size
         prob_reach2 = 1 - sum(sprobs)
         sprob2 = 0
         # for each possible previous sample, we compute the sprobs (and update the expectations accordingly)
-        print('computing sprob...')
-        for kprev in tqdm(kprevs):
+        #print('computing sprob...')
+        #for kprev in tqdm(kprevs):
+        for kprev in kprevs:
             # to do this more quickly, we make the observation that:
             #   sigma(kprev,nprev) * tau_1(k',n') >= 1 / alpha 
             # is equivalent to
@@ -100,24 +105,24 @@ for sparsity in [200,100,50,25,12]:
             alphaprime = alpha * sigmaprev
             if alphaprime >= 1:
                 uhohcount += 1
-                #print('uhohcount, kprev, nprev, p1, p0, alphaprime, pr_kprevs[kprev], sigmaprev')
-                #print(uhohcount, kprev, nprev, p1, p0, alphaprime, pr_kprevs[kprev], sigmaprev)
+                ##print('uhohcount, kprev, nprev, p1, p0, alphaprime, pr_kprevs[kprev], sigmaprev')
+                ##print(uhohcount, kprev, nprev, p1, p0, alphaprime, pr_kprevs[kprev], sigmaprev)
                 # need to compute alphaprime from scratch...
                 kmin = kmin_minerva(marginal_round_size, p1, p0, alphaprime)
-                plt.plot(pr_kprevs)
+                #plt.plot(pr_kprevs)
             else:
                 kmin = lookupkmin(alphaprime)
             sprob = pr_kprevs[kprev] * binom.sf(kmin-1, marginal_round_size, p1)
             sprob2 += sprob
 
-        # now print the sprobs for this round
+        # now #print the sprobs for this round
         #sprob2 = cond_sprob2 * prob_reach2 #sprob2 then is the 'absolute' probability that the audit stops in round 2
         sprobs.append(sprob2) #keep track of this sprob so that we can know the cumulative stopping probability
-        print('round',roundnum,'sprob',sprob2)
-        print('round',roundnum,'cumulative sprob',sum(sprobs))
+        #print('round',roundnum,'sprob',sprob2)
+        #print('round',roundnum,'cumulative sprob',sum(sprobs))
         exp_num_rounds += roundnum * sprob2
         exp_num_ballots += n * sprob2
-        print('after round '+str(roundnum)+', expected ballots '+str(exp_num_ballots)+' and expected rounds '+str(exp_num_rounds))
+        #print('after round '+str(roundnum)+', expected ballots '+str(exp_num_ballots)+' and expected rounds '+str(exp_num_rounds))
 
         # it will be necessary in the next round to know probability of getting each possible kprev: so we compute that here now
         # in minerva you can simply lop of the previous distributions tail and convolve with the marginal draw distribution,
@@ -130,9 +135,10 @@ for sparsity in [200,100,50,25,12]:
         kprevsparsity = sparsity # we skip (and then fill in approximately) a bunch of kprevs when computing pr_k2 for a particular k2
         last_pr_k2, second_to_last_pr_k2 = -1, -1
         last_k2, second_to_last_k2 = -1, -1
-        print('computing probability distribution for next round...')
+        #print('computing probability distribution for next round...')
         stopped = 0
-        for k2 in tqdm(k2s):
+        #for k2 in tqdm(k2s):
+        for k2 in k2s:
             if not k2 % k2sparsity == 0: 
                 continue
                 # for now, this continues (and later, when the next point is found, it will be filled in with an approximate value)
@@ -142,7 +148,7 @@ for sparsity in [200,100,50,25,12]:
                     continue
                     # for now, this continues (and later, when the next point is found, it will be filled in with an approximate value)
                 stop = (omega(roundnum, k2 - kprev, marginal_round_size, kprev, nprev, p1, p0) >= 1/alpha)
-                #print(roundnum, k2 - kprev, marginal_round_size, kprev, nprev, p1, p0
+                ##print(roundnum, k2 - kprev, marginal_round_size, kprev, nprev, p1, p0
                         #omega(j,        dnew,       mnew,               kprev, nprev, p_1, p_0):
                 if stop: 
                     # this audit 'path' is ignored when computing probability of each kprev for the next round 
@@ -153,8 +159,8 @@ for sparsity in [200,100,50,25,12]:
                     # this path also doesn't contribute since it's not possible 
                     # for example with round sizes 10,10 you can't get k2=15 if k1=2 since 15-2 = 13> 10=roundsize
                 curpr = pr_kprevs[kprev] * marginal_pr_ks[k2 - kprev] #nice indexes :)
-                #print('k2:',k2,'kprev:',kprev,'pr_kprevs[kprev]:',pr_kprevs[kprev])
-                #print('k2:',k2,'k2-kprev:',k2-kprev,'marginal_pr_ks[k2-kprev]:',marginal_pr_ks[k2-kprev])
+                ##print('k2:',k2,'kprev:',kprev,'pr_kprevs[kprev]:',pr_kprevs[kprev])
+                ##print('k2:',k2,'k2-kprev:',k2-kprev,'marginal_pr_ks[k2-kprev]:',marginal_pr_ks[k2-kprev])
                 pr_k2s[k2] += curpr 
                 secondlastpr = lastpr
                 lastpr = curpr
@@ -169,9 +175,9 @@ for sparsity in [200,100,50,25,12]:
             if not(last_k2 == -1 or second_to_last_k2 == -1):
                 # fill in with an approximationg (average) between the second to last and last points found
                 pr_k2s[second_to_last_k2+1:last_k2] = (second_to_last_pr_k2 + last_pr_k2) / 2
-                """ prints for debugging
+                """ #prints for debugging
                 if k2 >= 10000:
-                    print('filling in')
+                    #print('filling in')
                     plt.subplot(411)
                     plt.plot(pr_k2s)#[9000:11000])
                     tit = 'absolute pr[k'+str(roundnum)+'and proceed to round '+str(roundnum+1)+']... sum:'+str(sum(pr_k2s))#,'max:'+str(max(pr_k2s))+'min:'+str(min(pr_k2s))
@@ -190,7 +196,7 @@ for sparsity in [200,100,50,25,12]:
                     plt.show()
                 """
      
-        """ prints an dplots for debugging
+        """ ##prints an dplots for debugging
         print('filling in')
         plt.subplot(311)
         plt.plot(pr_k2s)#[9000:11000])
@@ -216,4 +222,5 @@ for sparsity in [200,100,50,25,12]:
         nprev = n
         pr_kprevs = pr_k2s
     exp_workload = ballotcost*exp_num_ballots + roundcost*exp_num_rounds
-    print('for sparsity',sparsity,'- exp_workload',exp_workload)
+    print('uhoh count = ',uhohcount)
+    print('for sparsity',sparsity,'   exp_num_ballots',exp_num_ballots,'    exp_num_rounds ',exp_num_rounds)
